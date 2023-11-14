@@ -43,8 +43,8 @@ class Hari(models.Model):
 class Jam(models.Model):
     id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True)
     range_jam = models.CharField(max_length=255)
-    awal = models.TimeField()
-    akhir = models.TimeField()
+    awal = models.CharField(max_length=255)
+    akhir = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'jam'
@@ -158,7 +158,7 @@ class Contraint(models.Model):
         # Anda dapat menambahkan konfigurasi lain sesuai kebutuhan
 
     def __str__(self):
-        return f"Contraint ID: {self.id}, Dosen: {self.dosen.name}, Hari: {self.hari.name}, Jam: {self.jam.name}"
+        return f"Contraint ID: {self.id}, Dosen: {self.dosen.name}, Hari: {self.hari.nama}, Jam: {self.jam.awal}"
 
 
 
