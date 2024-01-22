@@ -34,9 +34,9 @@ def generate_course_list(dataset, array_ruangan, array_hari, Times, endTimes, ja
     randomHari = random.choice(array_hari)
     
     for row in dataset:
-        print(row.matakuliah.status)
-        print(row.matakuliah.semester)
-        print("----------------------------")
+        # print(row.matakuliah.status)
+        # print(row.matakuliah.semester)
+        # print("----------------------------")
         haris = array_hari.copy()
         dosen = Dosen.objects.filter(name = row.dosen).first()
 
@@ -54,13 +54,24 @@ def generate_course_list(dataset, array_ruangan, array_hari, Times, endTimes, ja
 
             # getall = [' - '.join(map(str,item[:2])) + ' ' + item[2] for item in contraint]
             # print((getall)
-      
-      
-        if(row.matakuliah.semester <=4):
+        
+
+        if(row.matakuliah.semester <=4 and row.matakuliah.status == 'WAJIB'):
             haris.remove('Senin')
             haris.remove('Selasa')
-        if(row.matakuliah.semester >=5):
-            haris.remove('Jumat')
+            
+        if(row.matakuliah.semester >=5 and row.matakuliah.status == 'WAJIB'):
+            haris.remove('Senin')
+            haris.remove('Selasa')
+            
+        if(row.matakuliah.semester <=4 and row.matakuliah.status == 'PEMINATAN'):
+            haris.clear()
+            haris.append('Senin') 
+            
+        if(row.matakuliah.semester <=5 and row.matakuliah.status == 'PEMINATAN'):
+            haris.clear()
+            haris.append('Senin') 
+           
         courses.append(Course(row.matakuliah.kode_matkul, row.matakuliah.nama, row.matakuliah.status, Times , haris, array_ruangan, row.dosen ,row.kelas.nama, row.matakuliah.semester,row.matakuliah.sks, endTimes, getall,jadwalExist))
       
         
@@ -72,9 +83,10 @@ def generate_course_list(dataset, array_ruangan, array_hari, Times, endTimes, ja
 def pembagi_waktu(jadwal):
     
     mulai, selesai = jadwal.split('-')
-    selesai = selesai.replace(".", ":")
+  
+    print(selesai)
     selesai = datetime.datetime.strptime(selesai.strip(), '%H:%M')
-    mulai = mulai.replace(".", ":")
+    # mulai = mulai.replace(".", ":")
     mulai = datetime.datetime.strptime(mulai.strip(), '%H:%M')
     
     # Rentang waktu per 50 menit
@@ -86,7 +98,7 @@ def pembagi_waktu(jadwal):
     # Mengonversi dan mencetak waktu dalam format yang diinginkan
     time = []
     while current_time < selesai:
-        time.append(current_time.strftime('%H:%M').replace(":", "."))
+        time.append(current_time.strftime('%H:%M').replace(".", ":"))
         current_time += time_interval
     return time
     
@@ -106,12 +118,12 @@ def is_jadwal_berdekatan(jadwal_array, batas_waktu=timedelta(minutes=50)):
     """
     # Konversi string waktu menjadi objek datetime
     mulai_1, selesai_1 = jadwal_array[0].split('-')
-    selesai_1 = selesai_1.replace(".", ":")
+    # selesai_1 = selesai_1.replace(".", ":")
     selesai_1 = datetime.datetime.strptime(selesai_1.strip(), '%H:%M')
 
     # Ekstrak waktu mulai dari rentang kedua
     mulai_2, selesai_2 = jadwal_array[1].split('-')
-    mulai_2 = mulai_2.replace(".", ":")
+    # mulai_2 = mulai_2.replace(".", ":")
     mulai_2 = datetime.datetime.strptime(mulai_2.strip(), '%H:%M')
     
     # Hitung selisih waktu
@@ -126,10 +138,10 @@ def is_overlap(times):
     # print(times)
     for time_slot in times:
         start, end = time_slot.split('-')
-        start = start.replace(".", ":")
+        # start = start.replace(".", ":")
         start = datetime.datetime.strptime(start.strip(), '%H:%M')
         
-        end = end.replace(".", ":")
+        # end = end.replace(".", ":")
         end = datetime.datetime.strptime(end.strip(), '%H:%M')
         datetime_slots.append((start, end))
 
@@ -157,10 +169,11 @@ def parse_time_string(time_string):
 def fitness_func(schedule):
     conflicts = 0
     n = len(schedule)
-    jumat = '11.40 - 14.10'
+    jumat = '12:00 - 13:50'
     for i in range(n):
         
         course1 = schedule[i]
+       
         for j in range(i + 1, n):
             conflict = False
             course2 = schedule[j]
@@ -173,9 +186,11 @@ def fitness_func(schedule):
             same_subject = course1.nama_matakuliah == course2.nama_matakuliah
             same_semester = course1.semester == course2.semester
             diferent_day = course1.day != course2.day
+           
             same_subject_type = (course1.jenis == course2.jenis) and (course1.jenis == 'PEMINATAN')
             jadwal_berdekatan = is_jadwal_berdekatan([course1.time, course2.time])
-           
+            
+            
             
             if overlap and same_day and same_room:
                 conflict = True
@@ -197,9 +212,14 @@ def fitness_func(schedule):
             if conflict:
                 conflicts += 1
                 break
-        
+            
+        # if course1.day == 'Selasa':
+        #     # print(course1.day)
+        #     conflicts += 1
+            
         if(len(course1.contraint) >= 1):
-            for i in range(0, len(course1.contraint)):                
+            for i in range(0, len(course1.contraint)):    
+                # print('ahalo')            
                 constDay = course1.day == course1.contraint[i][1]
                 cekTime = course1.contraint[i][0]
                 
@@ -244,9 +264,10 @@ def generate_schedule(courses):
         awal = random.choice(times)
         times.extend(lastElement)
         JamPenentu = awal
-        if(JamPenentu == '07.30'):
-            akhir = course.endTimes[course.endTimes.index('08.20')+(sks-1)]
+        if(JamPenentu == '08:00'):
+            akhir = course.endTimes[course.endTimes.index('08:50')+(sks-1)]
         else:
+            # print(course.endTimes)
             akhir = course.endTimes[course.endTimes.index(JamPenentu)+(sks)]
         
      
@@ -293,9 +314,9 @@ def mutate(schedule):
 
     times.extend(lastElement)
     JamPenentu = awal
-    
-    if(JamPenentu == '07.30'):
-        akhir = course.endTimes[course.endTimes.index('08.20')+(sks-1)]
+    # print(JamPenentu)
+    if(JamPenentu == '08:00'):
+        akhir = course.endTimes[course.endTimes.index('08:50')+(sks-1)]
     else:
         akhir = course.endTimes[course.endTimes.index(JamPenentu)+(sks)]
     
@@ -329,7 +350,7 @@ def select_parents(population):
 def create_child(population):
     parent1, parent2 = select_parents(population)
     child = crossover(parent1, parent2)
-    if random.random() < 0.9:
+    if random.random() < 0.9 :
         mutate(child)
     return child
 
